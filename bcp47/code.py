@@ -60,8 +60,8 @@ class BCP47Code(object):
     def construct(self, *args, **kwargs):
         if args and kwargs:
             raise Exception(
-                "Mixture of args and kwargs, "
-                "use one or the other when constructing language codes")
+                "Mixture of args and kwargs. "
+                "Use one or the other when constructing language codes.")
         elif not (args or kwargs):
             raise Exception(
                 "No arguments provided to construct a language code")
@@ -130,11 +130,11 @@ class BCP47Code(object):
 
         if grandfathered and language:
             raise Exception(
-                "You can only specify one of grandfathered or language. "
-                "You passed %s" % ((grandfathered, language), ))
+                "You can only specify either \"grandfather\" or language. "
+                "You provided \"%s\"" % ((grandfather, language), ))
         if not (grandfathered or language):
             raise Exception(
-                "You must specify one of grandfathered or language")
+                "Please specify \"grandfather\" or language")
         for part in self.tag_parts:
             if grandfathered and part == "language":
                 self._add_part(parts, "grandfathered", kwargs.get(part))
