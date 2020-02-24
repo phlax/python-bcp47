@@ -70,8 +70,7 @@ class BCP47Code(object):
         return self.construct_from_kwargs(**kwargs)
 
     def _add_prefix(self, parts, args):
-        language = self.bcp47["languages"].get(args[0])
-        if language:
+        if self.bcp47["languages"].get(args[0]):
             self.kwargs["language"] = args[0]
             parts.append(args[0])
             return
@@ -79,13 +78,13 @@ class BCP47Code(object):
             raise Exception(
                 "Language '%s' not recognized"
                 % (args[0]))
-        self.kwargs["grandfathered"] = args[0]
-        parts.append(args[0])
         if args[1:]:
             raise Exception(
                 "Grandfathered tags cannot have "
                 "further extensions - found '%s'"
                 % args[1:])
+        self.kwargs["grandfathered"] = args[0]
+        parts.append(args[0])
 
     def _maybe_add_part(self, parts, tag_types, part):
         for part_type in tag_types:
