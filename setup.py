@@ -13,7 +13,7 @@ with open(readme, encoding='utf-8') as f:
 
 setup(
     name='python-bcp47',
-    version="0.0.3",
+    version="0.0.4",
     license='GPL3',
     url='https://github.com/phlax/bcp47',
     description=(
