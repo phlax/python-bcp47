@@ -152,3 +152,88 @@ def test_bcp47_add_part():
             list(bcp.__getitem__.return_value.__contains__)
             == [])
         assert not m_parts.append.called
+
+
+def test_bcp47_add_prefix_language():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        bcp.__getitem__.return_value.get.return_value = "LANG"
+        code = BCP47Code(bcp)
+        parts = MagicMock()
+        code._add_prefix(parts, ["lang", "region"])
+        assert len(bcp.__getitem__.call_args_list) == 1
+        assert (
+            list(bcp.__getitem__.call_args)
+            == [('languages',), {}])
+        assert (
+            list(bcp.__getitem__.return_value.get.call_args)
+            == [('lang',), {}])
+        assert (
+            list(parts.append.call_args)
+            == [('lang',), {}])
+        assert code.kwargs == {'language': 'lang'}
+
+
+def test_bcp47_add_prefix_grandfathered():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        def lookup(k):
+            if k == "languages":
+                return {}
+            return dict(gf="code")
+
+        bcp.__getitem__.side_effect = lookup
+        code = BCP47Code(bcp)
+        parts = MagicMock()
+        code._add_prefix(parts, ["gf"])
+        assert len(bcp.__getitem__.call_args_list) == 2
+        assert (
+            list(bcp.__getitem__.call_args)
+            == [('grandfathereds',), {}])
+        assert (
+            list(parts.append.call_args)
+            == [('gf',), {}])
+        assert code.kwargs == {'grandfathered': 'gf'}
+
+
+def test_bcp47_add_prefix_nomatch():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        bcp.__getitem__.return_value = {}
+        code = BCP47Code(bcp)
+        parts = MagicMock()
+
+        with pytest.raises(Exception) as e:
+            code._add_prefix(parts, ["NOMATCH"])
+        assert (
+            e.value.args[0]
+            == "Language 'NOMATCH' not recognized")
+        assert (
+            list(list(c) for c in bcp.__getitem__.call_args_list)
+            == [[('languages',), {}], [('grandfathereds',), {}]])
+        assert not parts.append.called
+        assert code.kwargs == {}
+
+
+def test_bcp47_add_prefix_grandfathered_args():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        def lookup(k):
+            if k == "languages":
+                return {}
+            return dict(gf="code")
+
+        bcp.__getitem__.side_effect = lookup
+        code = BCP47Code(bcp)
+        parts = MagicMock()
+        with pytest.raises(Exception) as e:
+            code._add_prefix(parts, ["gf", "foo", "bar"])
+        assert (
+            e.value.args[0]
+            == ("Grandfathered tags cannot have further extensions "
+                "- found '['foo', 'bar']'"))
+        assert (
+            list(list(c) for c in bcp.__getitem__.call_args_list)
+            == [[('languages',), {}], [('grandfathereds',), {}]])
+        assert not parts.append.called
+        assert code.kwargs == {}
