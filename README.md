@@ -1,4 +1,8 @@
 
+[![Build Status](https://travis-ci.org/phlax/python-bcp47.svg?branch=master)](https://travis-ci.org/phlax/python-bcp47)
+[![codecov](https://codecov.io/gh/phlax/python-bcp47/branch/master/graph/badge.svg)](https://codecov.io/gh/phlax/python-bcp47)
+
+
 ## python-bcp47
 
 
@@ -15,9 +19,9 @@ useful reading: https://www.w3.org/International/articles/language-tags/index.en
 
 ### Python example
 
-You can read `languages`, `extlangs`, `scripts`, `variants`, `regions`, `grandfathereds`, and `redundant` language tag parts from `dicts` on the `bcp47` object.
+You can read the `languages`, `extlangs`, `scripts`, `variants`, `regions`, `grandfathereds`, and `redundants` language tag parts from `dicts` on the `bcp47` object.
 
-They return `OrderedDicts`
+They return `OrderedDicts` containing the IANA database information
 
 ```
 >>> from bcp47 import bcp47
@@ -41,10 +45,12 @@ You can create a language code tag as follows
 'en'
 >>> tag.region
 'GB'
+>>> str(tag)
+'en-GB'
 
 ```
 
-You can also use a string or list of tag parts
+You can also pass a `string` or `list`  of `args` to create a tag
 
 ```
 >>> bcp47("en-GB")
@@ -55,18 +61,17 @@ You can also use a string or list of tag parts
 
 ```
 
-Creating a tag with invalid or unrecognized parameters raises an exception
+Creating a tag with invalid or unrecognized parameters raises an `BCP47Exception`
 
 ```
 >>> tag = bcp47(language="NOTALANGUAGE", region="GB")
 Traceback (most recent call last):
 ...
-Exception: Language 'NOTALANGUAGE' not recognized
+BCP47Exception: Language 'NOTALANGUAGE' not recognized
 
 >>> tag = bcp47("en-NOTAREGION")
 Traceback (most recent call last):
 ...
-Exception: Unrecognized tag part 'NOTAREGION'
-
+BCP47Exception: Unrecognized tag part 'NOTAREGION'
 
 ```
