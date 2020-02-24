@@ -3,19 +3,19 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
-from bcp47 import BCP47, BCP47Code
+from bcp47 import BCP47, BCP47Code, BCP47Exception
 
 
 def test_bcp47_code_construct_args_and_kwargs():
     bcp = BCP47()
-    with pytest.raises(Exception) as e:
+    with pytest.raises(BCP47Exception) as e:
         BCP47Code(bcp, "foo", "bar", "baz", foo="foo0")
     assert e.value.args[0].startswith("Mixture of args and kwargs")
 
 
 def test_bcp47_code_construct_no_args_or_kwargs():
     bcp = BCP47()
-    with pytest.raises(Exception) as e:
+    with pytest.raises(BCP47Exception) as e:
         BCP47Code(bcp)
     assert e.value.args[0].startswith("No arguments provided")
 
@@ -140,7 +140,7 @@ def test_bcp47_add_part():
         bcp.reset_mock()
 
         bcp.__getitem__.return_value.__contains__.return_value = False
-        with pytest.raises(Exception) as e:
+        with pytest.raises(BCP47Exception) as e:
             code._add_part(m_parts, "PART TYPE", "NAME")
         assert (
             e.value.args[0]
@@ -203,7 +203,7 @@ def test_bcp47_add_prefix_nomatch():
         code = BCP47Code(bcp)
         parts = MagicMock()
 
-        with pytest.raises(Exception) as e:
+        with pytest.raises(BCP47Exception) as e:
             code._add_prefix(parts, ["NOMATCH"])
         assert (
             e.value.args[0]
@@ -226,7 +226,7 @@ def test_bcp47_add_prefix_grandfathered_args():
         bcp.__getitem__.side_effect = lookup
         code = BCP47Code(bcp)
         parts = MagicMock()
-        with pytest.raises(Exception) as e:
+        with pytest.raises(BCP47Exception) as e:
             code._add_prefix(parts, ["gf", "foo", "bar"])
         assert (
             e.value.args[0]
@@ -286,7 +286,7 @@ def test_bcp47_code_construct_from_kwargs_gf_and_lang():
             m_add.side_effect = lambda parts, t, n: (
                 parts.append(n) if n else None)
             code = BCP47Code(bcp)
-            with pytest.raises(Exception) as e:
+            with pytest.raises(BCP47Exception) as e:
                 code.construct_from_kwargs(
                     language="en", grandfathered="some-gf-tag")
             assert e.value.args[0].startswith("You can only specify either")
@@ -304,7 +304,7 @@ def test_bcp47_code_construct_from_kwargs_no_gf_or_lang():
             m_add.side_effect = lambda parts, t, n: (
                 parts.append(n) if n else None)
             code = BCP47Code(bcp)
-            with pytest.raises(Exception) as e:
+            with pytest.raises(BCP47Exception) as e:
                 code.construct_from_kwargs(region="GB", variant="foo")
             assert e.value.args[0].startswith("Please specify")
             assert not m_add.called
@@ -405,7 +405,7 @@ def test_bcp47_code_construct_from_args_language_script_unrecognized():
 
                 m_add.side_effect = _maybe_add
                 code = BCP47Code(bcp)
-                with pytest.raises(Exception) as e:
+                with pytest.raises(BCP47Exception) as e:
                     code.construct_from_args("LANG", "SCRIPT", "NOTRECOGNIZED")
                 assert (
                     e.value.args[0]
@@ -435,7 +435,7 @@ def test_bcp47_code_construct_from_args_language_variant_unrecognized():
 
                 m_add.side_effect = _maybe_add
                 code = BCP47Code(bcp)
-                with pytest.raises(Exception) as e:
+                with pytest.raises(BCP47Exception) as e:
                     code.construct_from_args(
                         "LANG", "VARIANT", "NOTRECOGNIZED")
                 assert (
