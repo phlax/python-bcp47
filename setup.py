@@ -1,14 +1,26 @@
 # -*- coding: utf-8 -*-
 
+import os
 from setuptools import setup, find_packages
+
+
+readme = os.path.join(
+    os.path.abspath(os.path.dirname(__file__)),
+    'README.md')
+with open(readme, encoding='utf-8') as f:
+    long_description = f.read()
 
 
 setup(
     name='python-bcp47',
-    version="0.0.1",
+    version="0.0.2",
     license='GPL3',
     url='https://github.com/phlax/bcp47',
-    description='Parser and validator for language codes (bcp47)',
+    description=(
+        'Parser and validator for language codes (bcp47). '
+        'Also exposes the IANA language code database'),
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Ryan Northey',
     author_email='ryan@synca.io',
     classifiers=[
@@ -18,12 +30,10 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-
     packages=find_packages(),
+    include_package_data=True,
     zip_safe=False,
     extras_require={
         'test': [
