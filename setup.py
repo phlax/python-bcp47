@@ -13,7 +13,7 @@ with open(readme, encoding='utf-8') as f:
 
 setup(
     name='python-bcp47',
-    version="0.0.2",
+    version="0.0.3",
     license='GPL3',
     url='https://github.com/phlax/bcp47',
     description=(
@@ -23,6 +23,9 @@ setup(
     long_description_content_type='text/markdown',
     author='Ryan Northey',
     author_email='ryan@synca.io',
+    project_urls={
+        'Source': 'https://github.com/phlax/python-bcp47/',
+    },
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
