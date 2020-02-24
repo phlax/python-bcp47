@@ -1,4 +1,6 @@
 
+from .exceptions import BCP47Exception
+
 
 class BCP47Code(object):
     _errors = None
@@ -59,11 +61,11 @@ class BCP47Code(object):
 
     def construct(self, *args, **kwargs):
         if args and kwargs:
-            raise Exception(
+            raise BCP47Exception(
                 "Mixture of args and kwargs. "
                 "Use one or the other when constructing language codes.")
         elif not (args or kwargs):
-            raise Exception(
+            raise BCP47Exception(
                 "No arguments provided to construct a language code")
         if args:
             return self.construct_from_args(*args)
@@ -75,11 +77,11 @@ class BCP47Code(object):
             parts.append(args[0])
             return
         if not self.bcp47["grandfathereds"].get(args[0]):
-            raise Exception(
+            raise BCP47Exception(
                 "Language '%s' not recognized"
                 % (args[0]))
         if args[1:]:
-            raise Exception(
+            raise BCP47Exception(
                 "Grandfathered tags cannot have "
                 "further extensions - found '%s'"
                 % args[1:])
@@ -108,11 +110,11 @@ class BCP47Code(object):
         tag_types = self.tag_parts[1:]
         for part in args:
             if not tag_types:
-                raise Exception(
+                raise BCP47Exception(
                     "Unrecognized tag part '%s'" % part)
             _part, tag_types = self._maybe_add_part(parts, tag_types, part)
             if not _part:
-                raise Exception(
+                raise BCP47Exception(
                     "Unrecognized tag part '%s'" % part)
         self._lang_code = "-".join(parts)
 
@@ -120,7 +122,7 @@ class BCP47Code(object):
         if not name:
             return
         if name not in self.bcp47["%ss" % part_type]:
-            raise Exception(
+            raise BCP47Exception(
                 "%s '%s' not recognized"
                 % (part_type.capitalize(), name))
         parts.append(name)
@@ -131,11 +133,11 @@ class BCP47Code(object):
         parts = []
 
         if grandfathered and language:
-            raise Exception(
+            raise BCP47Exception(
                 "You can only specify either \"grandfather\" or language. "
                 "You provided \"%s\"." % ((grandfathered, language), ))
         if not (grandfathered or language):
-            raise Exception(
+            raise BCP47Exception(
                 "Please specify \"grandfather\" or language")
         for part in self.tag_parts:
             if grandfathered and part == "language":

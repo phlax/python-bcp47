@@ -4,6 +4,7 @@ from collections import OrderedDict
 
 from .parser import BCP47Parser
 from .code import BCP47Code
+from .exceptions import BCP47Exception
 
 
 class BCP47(object):
@@ -41,3 +42,7 @@ class BCP47(object):
 
 
 bcp47 = BCP47()
+
+
+__all__ = (
+    "bcp47", "BCP47", "BCP47Code", "BCP47Exception", "BCP47Parser")
