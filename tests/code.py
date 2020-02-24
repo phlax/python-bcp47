@@ -237,3 +237,213 @@ def test_bcp47_add_prefix_grandfathered_args():
             == [[('languages',), {}], [('grandfathereds',), {}]])
         assert not parts.append.called
         assert code.kwargs == {}
+
+
+def test_bcp47_maybe_add_part():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+
+        def lookup(k):
+            if k == "foos":
+                return {}
+            return dict(PART="info")
+
+        bcp.__getitem__.side_effect = lookup
+        code = BCP47Code(bcp)
+        parts = MagicMock()
+        tag_types = ["foo", "bar", "baz"]
+        result = code._maybe_add_part(parts, tag_types, "PART")
+        assert result == ('info', ['baz'])
+        assert (
+            list(list(c) for c in bcp.__getitem__.call_args_list)
+            == [[('foos',), {}], [('bars',), {}]])
+        assert code.kwargs == {'bar': 'PART'}
+        assert (
+            list(list(c) for c in parts.append.call_args_list)
+            == [[('PART',), {}]])
+
+
+def test_bcp47_maybe_dont_add_part():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        bcp.__getitem__.return_value = {}
+        code = BCP47Code(bcp)
+        parts = MagicMock()
+        tag_types = ["foo", "bar", "baz"]
+        result = code._maybe_add_part(parts, tag_types, "PART")
+        assert result == (None, [])
+        assert (
+            list(list(c) for c in bcp.__getitem__.call_args_list)
+            == [[('foos',), {}], [('bars',), {}], [('bazs',), {}]])
+        assert code.kwargs == {}
+        assert not parts.append.called
+
+
+def test_bcp47_code_construct_from_kwargs_gf_and_lang():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        with patch('bcp47.BCP47Code._add_part') as m_add:
+            m_add.side_effect = lambda parts, t, n: (
+                parts.append(n) if n else None)
+            code = BCP47Code(bcp)
+            with pytest.raises(Exception) as e:
+                code.construct_from_kwargs(
+                    language="en", grandfathered="some-gf-tag")
+            assert e.value.args[0].startswith("You can only specify either")
+            assert not m_add.called
+            assert (
+                code.kwargs
+                == {})
+            assert code._lang_code is None
+
+
+def test_bcp47_code_construct_from_kwargs_no_gf_or_lang():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        with patch('bcp47.BCP47Code._add_part') as m_add:
+            m_add.side_effect = lambda parts, t, n: (
+                parts.append(n) if n else None)
+            code = BCP47Code(bcp)
+            with pytest.raises(Exception) as e:
+                code.construct_from_kwargs(region="GB", variant="foo")
+            assert e.value.args[0].startswith("Please specify")
+            assert not m_add.called
+            assert (
+                code.kwargs
+                == {})
+            assert code._lang_code is None
+
+
+def test_bcp47_code_construct_from_kwargs_grandfathered():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        with patch('bcp47.BCP47Code._add_part') as m_add:
+            m_add.side_effect = lambda parts, t, n: (
+                parts.append(n) if n else None)
+            code = BCP47Code(bcp)
+            code.construct_from_kwargs(grandfathered="some-gf")
+            assert(
+                list(list(c) for c in m_add.call_args_list)
+                == [[(['some-gf'], 'grandfathered', 'some-gf'), {}]])
+            assert (
+                code.kwargs
+                == {'grandfathered': 'some-gf'})
+            assert code._lang_code == "some-gf"
+
+
+def test_bcp47_code_construct_from_args_language():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        with patch('bcp47.BCP47Code._add_prefix') as m_prefix:
+            with patch('bcp47.BCP47Code._maybe_add_part') as m_add:
+                m_prefix.side_effect = (
+                    lambda parts, args: parts.append(args[0]))
+                code = BCP47Code(bcp)
+                code.construct_from_args("foo")
+                assert code._lang_code == "foo"
+                assert not m_add.called
+
+
+def test_bcp47_code_construct_from_args_language_region():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        with patch('bcp47.BCP47Code._add_prefix') as m_prefix:
+            with patch('bcp47.BCP47Code._maybe_add_part') as m_add:
+                m_prefix.side_effect = (
+                    lambda parts, args: parts.append(args[0]))
+
+                def _maybe_add(parts, tag_types, part):
+                    parts.append(part)
+                    code.kwargs["region"] = part
+                    return "region", ["variant"]
+
+                m_add.side_effect = _maybe_add
+                code = BCP47Code(bcp)
+                code.construct_from_args("LANG", "REGION")
+                assert code._lang_code == "LANG-REGION"
+
+
+def test_bcp47_code_construct_from_args_language_script_variant():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        with patch('bcp47.BCP47Code._add_prefix') as m_prefix:
+            with patch('bcp47.BCP47Code._maybe_add_part') as m_add:
+                m_prefix.side_effect = (
+                    lambda parts, args: parts.append(args[0]))
+
+                def _maybe_add(parts, tag_types, part):
+                    parts.append(part)
+                    return part, tag_types[tag_types.index(part.lower()) + 1:]
+
+                m_add.side_effect = _maybe_add
+                code = BCP47Code(bcp)
+                code.construct_from_args("LANG", "SCRIPT", "VARIANT")
+                assert code._lang_code == "LANG-SCRIPT-VARIANT"
+                assert (
+                    list(list(c) for c in m_add.call_args_list)
+                    == [[(['LANG', 'SCRIPT', 'VARIANT'],
+                          ('extlang', 'script', 'region', 'variant'),
+                          'SCRIPT'), {}],
+                        [(['LANG', 'SCRIPT', 'VARIANT'],
+                          ('region', 'variant'),
+                          'VARIANT'), {}]])
+
+
+def test_bcp47_code_construct_from_args_language_script_unrecognized():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        with patch('bcp47.BCP47Code._add_prefix') as m_prefix:
+            with patch('bcp47.BCP47Code._maybe_add_part') as m_add:
+                m_prefix.side_effect = (
+                    lambda parts, args: parts.append(args[0]))
+
+                def _maybe_add(parts, tag_types, part):
+                    if part.lower() not in tag_types:
+                        return None, tag_types
+                    parts.append(part)
+                    return part, tag_types[tag_types.index(part.lower()) + 1:]
+
+                m_add.side_effect = _maybe_add
+                code = BCP47Code(bcp)
+                with pytest.raises(Exception) as e:
+                    code.construct_from_args("LANG", "SCRIPT", "NOTRECOGNIZED")
+                assert (
+                    e.value.args[0]
+                    == "Unrecognized tag part 'NOTRECOGNIZED'")
+                assert (
+                    list(list(c) for c in m_add.call_args_list)
+                    == [[(['LANG', 'SCRIPT'],
+                          ('extlang', 'script', 'region', 'variant'),
+                          'SCRIPT'), {}],
+                        [(['LANG', 'SCRIPT'],
+                          ('region', 'variant'),
+                          'NOTRECOGNIZED'), {}]])
+                assert code._lang_code is None
+
+
+def test_bcp47_code_construct_from_args_language_variant_unrecognized():
+    bcp = MagicMock()
+    with patch('bcp47.BCP47Code.construct'):
+        with patch('bcp47.BCP47Code._add_prefix') as m_prefix:
+            with patch('bcp47.BCP47Code._maybe_add_part') as m_add:
+                m_prefix.side_effect = (
+                    lambda parts, args: parts.append(args[0]))
+
+                def _maybe_add(parts, tag_types, part):
+                    parts.append(part)
+                    return part, tag_types[tag_types.index(part.lower()) + 1:]
+
+                m_add.side_effect = _maybe_add
+                code = BCP47Code(bcp)
+                with pytest.raises(Exception) as e:
+                    code.construct_from_args(
+                        "LANG", "VARIANT", "NOTRECOGNIZED")
+                assert (
+                    e.value.args[0]
+                    == "Unrecognized tag part 'NOTRECOGNIZED'")
+                assert (
+                    list(list(c) for c in m_add.call_args_list)
+                    == [[(['LANG', 'VARIANT'],
+                          ('extlang', 'script', 'region', 'variant'),
+                          'VARIANT'), {}]])
+                assert code._lang_code is None
