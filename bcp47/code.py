@@ -89,13 +89,14 @@ class BCP47Code(object):
     def _maybe_add_part(self, parts, tag_types, part):
         for part_type in tag_types:
             _part = self.bcp47["%ss" % part_type].get(part)
+            tag_types = tag_types[tag_types.index(part_type) + 1:]
             if _part:
                 # probs need some specific code here
                 # for backchecking allowed prefixes etc
-                tag_types = tag_types[tag_types.index(part_type):]
                 parts.append(part)
                 self.kwargs[part_type] = part
-                return _part
+                return _part, tag_types
+        return None, tag_types
 
     def construct_from_args(self, *args):
         parts = []
@@ -109,9 +110,10 @@ class BCP47Code(object):
             if not tag_types:
                 raise Exception(
                     "Unrecognized tag part '%s'" % part)
-            if not self._maybe_add_part(parts, tag_types, part):
+            _part, tag_types = self._maybe_add_part(parts, tag_types, part)
+            if not _part:
                 raise Exception(
-                    "Unrecognized tag part '%s'" % (part))
+                    "Unrecognized tag part '%s'" % part)
         self._lang_code = "-".join(parts)
 
     def _add_part(self, parts, part_type, name):
@@ -137,7 +139,7 @@ class BCP47Code(object):
                 "Please specify \"grandfather\" or language")
         for part in self.tag_parts:
             if grandfathered and part == "language":
-                self._add_part(parts, "grandfathered", kwargs.get(part))
+                self._add_part(parts, "grandfathered", grandfathered)
                 break
             self._add_part(parts, part, kwargs.get(part))
         self.kwargs = kwargs
